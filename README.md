@@ -7,15 +7,15 @@ tratamento de erro (HTTP 400 — estoque esgotado).
 
 ## Stack
 
-| Item | Versão / Configuração |
-| --- | --- |
-| Angular | 17 (`@angular/core` ^17.3.0) |
-| Componentes | **Standalone Components** (`standalone: true`), sem `NgModule` |
-| HTTP | `provideHttpClient(withFetch())` em `src/app/app.config.ts` |
-| Estilização | Tailwind CSS 3.4 (`tailwind.config.js` + `postcss.config.js`) |
-| Controle de fluxo | Diretivas nativas `@if`, `@for`, `@empty`, `@else if` |
-| Estado | `signal`, `computed` (Angular Signals) |
-| Tipagem | `strict: true` + `strictTemplates: true` |
+| Item              | Versão / Configuração                                          |
+| ----------------- | -------------------------------------------------------------- |
+| Angular           | 17 (`@angular/core` ^17.3.0)                                   |
+| Componentes       | **Standalone Components** (`standalone: true`), sem `NgModule` |
+| HTTP              | `provideHttpClient(withFetch())` em `src/app/app.config.ts`    |
+| Estilização       | Tailwind CSS 3.4 (`tailwind.config.js` + `postcss.config.js`)  |
+| Controle de fluxo | Diretivas nativas `@if`, `@for`, `@empty`, `@else if`          |
+| Estado            | `signal`, `computed` (Angular Signals)                         |
+| Tipagem           | `strict: true` + `strictTemplates: true`                       |
 
 ## Como rodar
 
@@ -25,18 +25,24 @@ npm start          # http://localhost:4200
 npm run build      # bundle de produção em dist/aurora-catalogo
 ```
 
-O back-end Spring Boot deve responder em `http://localhost:8080/api`. O
-`proxy.conf.json` também encaminha `/api` para `http://localhost:8080`, então
-basta manter o Spring Boot na porta padrão. Para apontar para outro host,
-edite `src/environments/environment.ts`.
+O back-end Spring Boot deve responder em `http://localhost:8081`. No
+desenvolvimento, o frontend usa `/api` e o `proxy.conf.json` encaminha as
+requisições para o backend. O build de produção usa a URL direta
+`http://localhost:8081`, necessária quando os arquivos estáticos são servidos
+pelo Apache local. Para usar outro host, edite
+`src/environments/environment.prod.ts`; o backend deve permitir a origem do
+frontend em `Cors.java`.
 
 ### Endpoints consumidos
 
-| Método | Rota | Uso |
-| --- | --- | --- |
-| `GET` | `/api/products` | Lista o catálogo (`Product[]`) |
-| `POST` | `/api/orders` | Envia `OrderRequest` e devolve `OrderResponse` |
-| — | HTTP `400` | Corpo `{ "message": "..." }` exibido na caixa de alerta |
+| Método   | Rota frontend           | Rota backend     | Contrato                                                |
+| -------- | ----------------------- | ---------------- | ------------------------------------------------------- |
+| `GET`    | `/api/products`         | `/products`      | Lista produtos, incluindo `hasSales`                    |
+| `GET`    | `/api/categories`       | `/categories`    | Lista categorias disponíveis para cadastro              |
+| `POST`   | `/api/products`         | `/products`      | Cria produto com `categoryId`; resposta `201 Created`   |
+| `DELETE` | `/api/products/{id}`    | `/products/{id}` | Exclui produto sem estoque e sem vendas; resposta `204` |
+| `POST`   | `/api/orders`           | `/orders`        | Envia `OrderRequest` e devolve `OrderResponse`          |
+| —        | Respostas `400/404/409` | —                | Corpo `{ "message": "..." }` exibido na caixa de alerta |
 
 ## Estrutura
 
@@ -60,16 +66,19 @@ src/
 ## Critérios de aceite atendidos
 
 **1. Arquitetura e configuração**
+
 - Componentes Standalone (`AppComponent` e `ProductListPageComponent`).
 - `provideHttpClient(withFetch())` no arquivo de configuração.
 - Tailwind CSS com tokens de marca (`brand`, `canvas`, `ink`) em `tailwind.config.js`.
 
 **2. Consumo de API e tipagem forte**
+
 - Interfaces `Category`, `Product`, `OrderRequest`, `OrderResponse` e `ApiErrorResponse`.
 - `ProductService` encapsula `getProducts()` (GET) e `createOrder()` (POST), além de
   converter falhas HTTP em mensagens para a tela.
 
 **3. Interface, alerta visual e reatividade**
+
 - Grid renderizado com `@for (product of products(); track product.id)` e `@empty`.
 - Selo âmbar **“Estoque baixo (n)”** quando `product.stock <= 5 && product.stock > 0`;
   produtos com 1 ou 2 unidades sobem para o tom laranja **“Crítico”**.
@@ -78,10 +87,11 @@ src/
   lista os SKUs esgotados e em nível crítico.
 
 **4. Fluxo de compra e tratamento de erros**
+
 - Botão **Comprar agora** fica `[disabled]` e vira **Indisponível** com estoque zero.
 - Seletor de quantidade limitado ao estoque disponível.
-- Caixa de alerta amigável para HTTP 400 (ex.: *“está esgotado e o pedido não pôde
-  ser aprovado”*) e para falhas de rede (HTTP 0).
+- Caixa de alerta amigável para HTTP 400 (ex.: _“está esgotado e o pedido não pôde
+  ser aprovado”_) e para falhas de rede (HTTP 0).
 - Após a compra confirmada, a mensagem de sucesso traz o número do pedido e o estoque
   restante, e a listagem é recarregada automaticamente (`loadProducts()`).
 

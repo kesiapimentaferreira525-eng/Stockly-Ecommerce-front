@@ -1,8 +1,5 @@
-/**
- * Configuração por ambiente. Em desenvolvimento o back-end Spring Boot
- * roda em `http://localhost:8080` e expõe `/api`.
- */
+/** Em desenvolvimento, o proxy do Angular encaminha `/api` ao Spring Boot. */
 export const environment = {
   production: false,
-  apiBaseUrl: 'http://localhost:8080/api',
+  apiBaseUrl: '/api',
 };

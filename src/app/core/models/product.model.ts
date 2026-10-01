@@ -5,7 +5,6 @@
 export interface Category {
   id: string;
   name: string;
-  slug: string;
 }
 
 export interface Product {
@@ -16,19 +15,52 @@ export interface Product {
   price: number;
   stock: number;
   category: Category;
+  hasSales: boolean;
+}
+
+export interface ProductCreateRequest {
+  sku: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  categoryId: string;
 }
 
 export interface OrderRequest {
   productId: string;
   quantity: number;
+  buyerName: string;
+  fulfillmentType: FulfillmentType;
+  paymentMethod: PaymentMethod;
+  deliveryAddress: DeliveryAddress | null;
+}
+
+export type FulfillmentType = 'DELIVERY' | 'STORE_PICKUP';
+export type PaymentMethod = 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH';
+
+export interface DeliveryAddress {
+  postalCode: string;
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
 }
 
 export interface OrderResponse {
   orderId: string;
   productId: string;
+  productName: string;
   quantity: number;
   total: number;
   remainingStock: number;
+  buyerName: string;
+  fulfillmentType: FulfillmentType;
+  paymentMethod: PaymentMethod;
+  deliveryAddress: DeliveryAddress | null;
+  pickupLocation: string | null;
   status: 'CONFIRMED' | 'REJECTED';
   message: string;
 }

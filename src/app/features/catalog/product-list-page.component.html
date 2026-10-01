@@ -62,6 +62,115 @@
           </dl>
         </section>
 
+        <div class="mt-6 flex justify-end">
+          <button
+            type="button"
+            class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#f4efe6] transition-colors hover:bg-brand-dark"
+            [attr.aria-expanded]="showProductForm()"
+            (click)="toggleProductForm()"
+          >
+            {{ showProductForm() ? 'Fechar cadastro' : 'Cadastrar produto' }}
+          </button>
+        </div>
+
+        @if (showProductForm()) {
+          <form
+            class="mt-4 grid gap-4 rounded-2xl border border-[#e6e1d8] bg-white p-5 sm:grid-cols-2"
+            [formGroup]="productForm"
+            (ngSubmit)="createProduct()"
+          >
+            <h2 class="sm:col-span-2 text-lg font-bold">Cadastro de produto</h2>
+
+            <label class="grid gap-1 text-sm font-medium" for="product-sku">
+              SKU
+              <input
+                id="product-sku"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="sku"
+                maxlength="40"
+                required
+              />
+            </label>
+
+            <label class="grid gap-1 text-sm font-medium" for="product-name">
+              Nome
+              <input
+                id="product-name"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="name"
+                maxlength="255"
+                required
+              />
+            </label>
+
+            <label class="grid gap-1 text-sm font-medium sm:col-span-2" for="product-description">
+              Descrição
+              <textarea
+                id="product-description"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="description"
+                maxlength="1000"
+                rows="2"
+                required
+              ></textarea>
+            </label>
+
+            <label class="grid gap-1 text-sm font-medium" for="product-price">
+              Preço (R$)
+              <input
+                id="product-price"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="price"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+              />
+            </label>
+
+            <label class="grid gap-1 text-sm font-medium" for="product-stock">
+              Estoque inicial
+              <input
+                id="product-stock"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="stock"
+                type="number"
+                min="0"
+                step="1"
+                required
+              />
+            </label>
+
+            <label class="grid gap-1 text-sm font-medium sm:col-span-2" for="product-category">
+              Categoria
+              <select
+                id="product-category"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="categoryId"
+                required
+              >
+                <option value="" disabled>Selecione uma categoria</option>
+                @for (category of categories(); track category.id) {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+              </select>
+            </label>
+
+            <div class="flex flex-wrap items-center gap-3 sm:col-span-2">
+              <button
+                type="submit"
+                class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#f4efe6] transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+                [disabled]="savingProduct() || categories().length === 0"
+              >
+                {{ savingProduct() ? 'Salvando…' : 'Salvar produto' }}
+              </button>
+              @if (categories().length === 0) {
+                <span class="text-sm text-[#8a8177]">Nenhuma categoria disponível para cadastro.</span>
+              }
+            </div>
+          </form>
+        }
+
         <!-- Alertas de Feedback -->
         @if (feedback(); as alert) {
           <div
@@ -187,7 +296,7 @@
                       type="button"
                       class="h-9 flex-1 rounded-lg bg-brand font-medium text-[#f4efe6] transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:bg-[#d8d2c8] disabled:text-[#8a8177]"
                       [disabled]="product.stock === 0 || pendingProductId() === product.id"
-                      (click)="buyProduct(product)"
+                      (click)="openCheckout(product)"
                     >
                       @if (pendingProductId() === product.id) {
                         Enviando pedido…
@@ -198,6 +307,20 @@
                       }
                     </button>
                   </div>
+                  @if (product.stock === 0 && !product.hasSales) {
+                    <button
+                      type="button"
+                      class="mt-3 w-full rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-800 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      [disabled]="pendingDeleteProductId() === product.id"
+                      (click)="deleteProduct(product)"
+                    >
+                      {{ pendingDeleteProductId() === product.id ? 'Excluindo…' : 'Excluir produto' }}
+                    </button>
+                  } @else if (product.stock === 0 && product.hasSales) {
+                    <p class="mt-3 text-xs text-[#8a8177]">
+                      Produto com vendas registradas; exclusão indisponível.
+                    </p>
+                  }
                 </div>
               </div>
             </article>
@@ -260,5 +383,254 @@
         </div>
       </aside>
     </div>
+
+    @if (checkoutProduct(); as product) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <section
+          class="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="checkout-title"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="checkout-title" class="text-xl font-extrabold">Finalizar compra</h2>
+              <p class="mt-1 text-sm text-[#6b635a]">{{ product.name }} · {{ quantityOf(product) }} un.</p>
+            </div>
+            <button
+              type="button"
+              class="rounded-md p-1 text-[#6b635a] hover:bg-black/5"
+              aria-label="Fechar finalização da compra"
+              (click)="closeCheckout()"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="mt-4 rounded-xl bg-[#fbfaf8] p-4">
+            <div class="flex justify-between gap-4 text-sm">
+              <span>{{ quantityOf(product) }} × {{ product.name }}</span>
+              <span class="font-bold">
+                {{ product.price * quantityOf(product) | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              </span>
+            </div>
+          </div>
+
+          @if (checkoutError()) {
+            <p class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900" role="alert">
+              {{ checkoutError() }}
+            </p>
+          }
+
+          <form class="mt-5 grid gap-4 sm:grid-cols-2" [formGroup]="checkoutForm" (ngSubmit)="finalizePurchase()">
+            <label class="grid gap-1 text-sm font-medium sm:col-span-2" for="buyer-name">
+              Nome do comprador
+              <input
+                id="buyer-name"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="buyerName"
+                maxlength="120"
+                autocomplete="name"
+                required
+              />
+            </label>
+
+            <label class="grid gap-1 text-sm font-medium" for="fulfillment-type">
+              Recebimento
+              <select
+                id="fulfillment-type"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="fulfillmentType"
+                (change)="updateFulfillmentValidators()"
+              >
+                <option value="DELIVERY">Entrega</option>
+                <option value="STORE_PICKUP">Retirada em loja</option>
+              </select>
+            </label>
+
+            <label class="grid gap-1 text-sm font-medium" for="payment-method">
+              Forma de pagamento
+              <select
+                id="payment-method"
+                class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                formControlName="paymentMethod"
+              >
+                <option value="PIX">Pix</option>
+                <option value="CREDIT_CARD">Cartão de crédito</option>
+                <option value="DEBIT_CARD">Cartão de débito</option>
+                <option value="CASH">Dinheiro</option>
+              </select>
+            </label>
+
+            @if (checkoutForm.controls.fulfillmentType.value === 'DELIVERY') {
+              <p class="text-sm font-bold text-[#6b635a] sm:col-span-2">Endereço para entrega</p>
+
+              <label class="grid gap-1 text-sm font-medium" for="delivery-postal-code">
+                CEP
+                <input
+                  id="delivery-postal-code"
+                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  formControlName="postalCode"
+                  placeholder="00000-000"
+                  autocomplete="postal-code"
+                />
+              </label>
+
+              <label class="grid gap-1 text-sm font-medium" for="delivery-street">
+                Rua / avenida
+                <input
+                  id="delivery-street"
+                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  formControlName="street"
+                  autocomplete="address-line1"
+                />
+              </label>
+
+              <label class="grid gap-1 text-sm font-medium" for="delivery-number">
+                Número
+                <input
+                  id="delivery-number"
+                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  formControlName="number"
+                  autocomplete="address-line2"
+                />
+              </label>
+
+              <label class="grid gap-1 text-sm font-medium" for="delivery-complement">
+                Complemento (opcional)
+                <input
+                  id="delivery-complement"
+                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  formControlName="complement"
+                />
+              </label>
+
+              <label class="grid gap-1 text-sm font-medium" for="delivery-neighborhood">
+                Bairro
+                <input
+                  id="delivery-neighborhood"
+                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  formControlName="neighborhood"
+                />
+              </label>
+
+              <label class="grid gap-1 text-sm font-medium" for="delivery-city">
+                Cidade
+                <input
+                  id="delivery-city"
+                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  formControlName="city"
+                  autocomplete="address-level2"
+                />
+              </label>
+
+              <label class="grid gap-1 text-sm font-medium" for="delivery-state">
+                Estado (UF)
+                <input
+                  id="delivery-state"
+                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  formControlName="state"
+                  maxlength="2"
+                  autocomplete="address-level1"
+                />
+              </label>
+            } @else {
+              <p class="rounded-lg bg-brand-soft p-3 text-sm text-[#3c3630] sm:col-span-2">
+                O pedido será separado para retirada na loja. O local de retirada aparecerá na confirmação.
+              </p>
+            }
+
+            <p class="text-xs leading-relaxed text-[#8a8177] sm:col-span-2">
+              A forma de pagamento ficará registrada no pedido. O pagamento ainda não é processado automaticamente
+              por um provedor nesta aplicação.
+            </p>
+
+            <div class="flex flex-wrap justify-end gap-3 sm:col-span-2">
+              <button
+                type="button"
+                class="rounded-lg border border-[#e6e1d8] px-4 py-2 text-sm font-semibold"
+                (click)="closeCheckout()"
+              >
+                Voltar
+              </button>
+              <button
+                type="submit"
+                class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#f4efe6] hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+                [disabled]="pendingProductId() === product.id"
+              >
+                {{ pendingProductId() === product.id ? 'Finalizando…' : 'Confirmar compra' }}
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    }
+
+    @if (completedOrder(); as order) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <section
+          class="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="order-confirmation-title"
+        >
+          <p class="text-sm font-bold uppercase tracking-widest text-emerald-700">Compra finalizada</p>
+          <h2 id="order-confirmation-title" class="mt-1 text-2xl font-extrabold">Pedido confirmado</h2>
+          <p class="mt-2 text-sm text-[#6b635a]">Número do pedido: <span class="font-mono">{{ order.orderId }}</span></p>
+
+          <dl class="mt-5 grid gap-3 rounded-xl bg-[#fbfaf8] p-4 text-sm sm:grid-cols-2">
+            <div>
+              <dt class="text-xs font-semibold uppercase text-[#8a8177]">Comprador</dt>
+              <dd class="mt-1 font-medium">{{ order.buyerName }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs font-semibold uppercase text-[#8a8177]">Produto e quantidade</dt>
+              <dd class="mt-1 font-medium">{{ order.productName }} · {{ order.quantity }} un.</dd>
+            </div>
+            <div>
+              <dt class="text-xs font-semibold uppercase text-[#8a8177]">Recebimento</dt>
+              <dd class="mt-1 font-medium">{{ fulfillmentLabel(order.fulfillmentType) }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs font-semibold uppercase text-[#8a8177]">Pagamento escolhido</dt>
+              <dd class="mt-1 font-medium">{{ paymentMethodLabel(order.paymentMethod) }}</dd>
+            </div>
+            @if (order.fulfillmentType === 'DELIVERY' && order.deliveryAddress; as address) {
+              <div class="sm:col-span-2">
+                <dt class="text-xs font-semibold uppercase text-[#8a8177]">Endereço de entrega</dt>
+                <dd class="mt-1 font-medium">
+                  {{ address.street }}, {{ address.number }}
+                  @if (address.complement) { · {{ address.complement }} }
+                  · {{ address.neighborhood }}, {{ address.city }} - {{ address.state }}, {{ address.postalCode }}
+                </dd>
+              </div>
+            }
+            @if (order.fulfillmentType === 'STORE_PICKUP') {
+              <div class="sm:col-span-2">
+                <dt class="text-xs font-semibold uppercase text-[#8a8177]">Local de retirada</dt>
+                <dd class="mt-1 font-medium">{{ order.pickupLocation }}</dd>
+              </div>
+            }
+            <div class="sm:col-span-2">
+              <dt class="text-xs font-semibold uppercase text-[#8a8177]">Total</dt>
+              <dd class="mt-1 text-xl font-extrabold text-brand">
+                {{ order.total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              </dd>
+            </div>
+          </dl>
+
+          <p class="mt-4 text-xs leading-relaxed text-[#8a8177]">
+            O método de pagamento foi registrado; a cobrança deve ser concluída pelo estabelecimento.
+          </p>
+          <button
+            type="button"
+            class="mt-5 w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-[#f4efe6] hover:bg-brand-dark"
+            (click)="closeOrderReceipt()"
+          >
+            Concluir
+          </button>
+        </section>
+      </div>
+    }
   </main>
 </div>

@@ -5,9 +5,11 @@ import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ApiErrorResponse,
+  Category,
   OrderRequest,
   OrderResponse,
   Product,
+  ProductCreateRequest,
 } from '../models/product.model';
 
 /**
@@ -19,10 +21,29 @@ export class ProductService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiBaseUrl}/products`;
   private readonly orderUrl = `${environment.apiBaseUrl}/orders`;
+  private readonly categoriesUrl = `${environment.apiBaseUrl}/categories`;
 
   getProducts(): Observable<Product[]> {
     return this.http
       .get<Product[]>(this.apiUrl)
+      .pipe(catchError((error) => throwError(() => error)));
+  }
+
+  getCategories(): Observable<Category[]> {
+    return this.http
+      .get<Category[]>(this.categoriesUrl)
+      .pipe(catchError((error) => throwError(() => error)));
+  }
+
+  createProduct(product: ProductCreateRequest): Observable<Product> {
+    return this.http
+      .post<Product>(this.apiUrl, product)
+      .pipe(catchError((error) => throwError(() => error)));
+  }
+
+  deleteProduct(productId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.apiUrl}/${productId}`)
       .pipe(catchError((error) => throwError(() => error)));
   }
 
