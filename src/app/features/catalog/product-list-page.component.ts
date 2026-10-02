@@ -234,10 +234,12 @@ export class ProductListPageComponent implements OnInit {
     this.completedOrder.set(null);
     this.checkoutProduct.set(product);
     this.checkoutForm.reset();
+    this.checkoutForm.enable({ emitEvent: false });
     this.updateFulfillmentValidators();
   }
 
   updateFulfillmentValidators(): void {
+    this.checkoutForm.enable({ emitEvent: false });
     const deliveryRequired = this.checkoutForm.controls.fulfillmentType.value === 'DELIVERY';
     const deliveryFields = [
       [this.checkoutForm.controls.street, 255],

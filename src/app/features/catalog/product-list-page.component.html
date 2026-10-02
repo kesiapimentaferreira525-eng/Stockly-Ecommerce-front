@@ -469,10 +469,15 @@
                 CEP
                 <input
                   id="delivery-postal-code"
-                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  name="postalCode"
+                  type="text"
+                  inputmode="numeric"
+                  class="pointer-events-auto w-full cursor-text select-text rounded-lg border border-[#e6e1d8] bg-white px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                   formControlName="postalCode"
                   placeholder="00000-000"
-                  autocomplete="postal-code"
+                  autocomplete="off"
+                  tabindex="0"
+                  required
                 />
               </label>
 
@@ -480,9 +485,14 @@
                 Rua / avenida
                 <input
                   id="delivery-street"
-                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  name="street"
+                  type="text"
+                  class="pointer-events-auto w-full cursor-text select-text rounded-lg border border-[#e6e1d8] bg-white px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                   formControlName="street"
-                  autocomplete="address-line1"
+                  autocomplete="off"
+                  placeholder="Nome da rua ou avenida"
+                  tabindex="0"
+                  required
                 />
               </label>
 
@@ -490,9 +500,14 @@
                 Número
                 <input
                   id="delivery-number"
-                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  name="addressNumber"
+                  type="text"
+                  class="pointer-events-auto w-full cursor-text select-text rounded-lg border border-[#e6e1d8] bg-white px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                   formControlName="number"
-                  autocomplete="address-line2"
+                  autocomplete="off"
+                  placeholder="Número"
+                  tabindex="0"
+                  required
                 />
               </label>
 
@@ -500,8 +515,13 @@
                 Complemento (opcional)
                 <input
                   id="delivery-complement"
-                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  name="addressComplement"
+                  type="text"
+                  class="pointer-events-auto w-full cursor-text select-text rounded-lg border border-[#e6e1d8] bg-white px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                   formControlName="complement"
+                  autocomplete="off"
+                  placeholder="Apartamento, casa, bloco..."
+                  tabindex="0"
                 />
               </label>
 
@@ -509,8 +529,14 @@
                 Bairro
                 <input
                   id="delivery-neighborhood"
-                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  name="neighborhood"
+                  type="text"
+                  class="pointer-events-auto w-full cursor-text select-text rounded-lg border border-[#e6e1d8] bg-white px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                   formControlName="neighborhood"
+                  autocomplete="off"
+                  placeholder="Bairro"
+                  tabindex="0"
+                  required
                 />
               </label>
 
@@ -518,9 +544,14 @@
                 Cidade
                 <input
                   id="delivery-city"
-                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  name="city"
+                  type="text"
+                  class="pointer-events-auto w-full cursor-text select-text rounded-lg border border-[#e6e1d8] bg-white px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                   formControlName="city"
-                  autocomplete="address-level2"
+                  autocomplete="off"
+                  placeholder="Cidade"
+                  tabindex="0"
+                  required
                 />
               </label>
 
@@ -528,10 +559,17 @@
                 Estado (UF)
                 <input
                   id="delivery-state"
-                  class="rounded-lg border border-[#e6e1d8] px-3 py-2"
+                  name="state"
+                  type="text"
+                  inputmode="text"
+                  autocapitalize="characters"
+                  class="pointer-events-auto w-full cursor-text select-text rounded-lg border border-[#e6e1d8] bg-white px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                   formControlName="state"
                   maxlength="2"
-                  autocomplete="address-level1"
+                  autocomplete="off"
+                  placeholder="UF"
+                  tabindex="0"
+                  required
                 />
               </label>
             } @else {
