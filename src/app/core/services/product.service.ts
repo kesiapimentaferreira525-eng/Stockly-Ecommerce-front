@@ -6,16 +6,13 @@ import { environment } from '../../../environments/environment';
 import {
   ApiErrorResponse,
   Category,
+  CategoryCreateRequest,
   OrderRequest,
   OrderResponse,
   Product,
   ProductCreateRequest,
 } from '../models/product.model';
 
-/**
- * Critério 2 da HU-02: serviço dedicado que encapsula as chamadas HTTP
- * de listagem de produtos (GET) e envio de pedidos (POST).
- */
 @Injectable({ providedIn: 'root' })
 export class ProductService {
   private readonly http = inject(HttpClient);
@@ -32,6 +29,12 @@ export class ProductService {
   getCategories(): Observable<Category[]> {
     return this.http
       .get<Category[]>(this.categoriesUrl)
+      .pipe(catchError((error) => throwError(() => error)));
+  }
+
+  createCategory(category: CategoryCreateRequest): Observable<Category> {
+    return this.http
+      .post<Category>(this.categoriesUrl, category)
       .pipe(catchError((error) => throwError(() => error)));
   }
 
@@ -53,7 +56,6 @@ export class ProductService {
       .pipe(catchError((error) => throwError(() => error)));
   }
 
-  /** Converte qualquer falha HTTP em uma mensagem amigável para a tela. */
   static toFriendlyMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 0) {

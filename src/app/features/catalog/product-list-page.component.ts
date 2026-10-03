@@ -1,6 +1,6 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ProductService } from '../../core/services/product.service';
 import {
@@ -12,6 +12,7 @@ import {
   PaymentMethod,
   Product,
   ProductCreateRequest,
+  isValidUuid,
   stockLabel,
   stockStatus,
 } from '../../core/models/product.model';
@@ -22,15 +23,10 @@ interface Feedback {
   detail: string;
 }
 
-/**
- * Critério 3 e 4 da HU-02: listagem com `@for` / `@empty`, alerta visual
- * condicional (`@if`) de estoque baixo e fluxo de compra com tratamento
- * de erros HTTP.
- */
 @Component({
   selector: 'app-product-list-page',
   standalone: true,
-  imports: [CurrencyPipe, ReactiveFormsModule],
+  imports: [CurrencyPipe, FormsModule, ReactiveFormsModule],
   templateUrl: './product-list-page.component.html',
 })
 export class ProductListPageComponent implements OnInit {
@@ -38,6 +34,9 @@ export class ProductListPageComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
 
   readonly lowStockThreshold = LOW_STOCK_THRESHOLD;
+
+  newCategoryName = '';
+  creatingCategory = false;
 
   readonly products = signal<Product[]>([]);
   readonly categories = signal<Category[]>([]);
@@ -113,7 +112,6 @@ export class ProductListPageComponent implements OnInit {
     });
   }
 
-  /** GET /api/products */
   loadProducts(): void {
     this.loading.set(true);
     this.productService.getProducts().subscribe({
@@ -134,6 +132,33 @@ export class ProductListPageComponent implements OnInit {
     this.successMessage.set(null);
   }
 
+  createCategory(): void {
+    const name = this.newCategoryName.trim();
+    if (!name) {
+      this.errorMessage.set('Informe o nome da categoria antes de salvar.');
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    this.creatingCategory = true;
+
+    this.productService.createCategory({ name }).subscribe({
+      next: (category) => {
+        this.categories.update((current) => [...current, category]);
+        this.productForm.patchValue({ categoryId: category.id });
+        this.newCategoryName = '';
+        this.creatingCategory = false;
+        this.successTitle.set('Categoria criada');
+        this.successMessage.set(`Categoria ${category.name} cadastrada com sucesso.`);
+      },
+      error: (error: unknown) => {
+        this.creatingCategory = false;
+        this.errorMessage.set(ProductService.toFriendlyMessage(error));
+      },
+    });
+  }
+
   createProduct(): void {
     if (this.productForm.invalid) {
       this.productForm.markAllAsTouched();
@@ -142,13 +167,20 @@ export class ProductListPageComponent implements OnInit {
     }
 
     const form = this.productForm.getRawValue();
+    const categoryId = form.categoryId.trim();
+
+    if (!isValidUuid(categoryId)) {
+      this.errorMessage.set('Selecione uma categoria válida para cadastrar o produto.');
+      return;
+    }
+
     const product: ProductCreateRequest = {
       sku: form.sku.trim().toUpperCase(),
       name: form.name.trim(),
       description: form.description.trim(),
       price: form.price,
       stock: form.stock,
-      categoryId: form.categoryId,
+      categoryId,
     };
 
     this.errorMessage.set(null);

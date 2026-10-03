@@ -1,19 +1,45 @@
-/**
- * Teste de contrato da regra de negócio do alerta visual (Critério 3).
- * Execute com: npx tsx src/app/core/models/product.model.spec.ts
- */
-import { strict as assert } from 'node:assert';
+import { isValidUuid, stockLabel, stockStatus } from './product.model';
 
-import { stockLabel, stockStatus } from './product.model';
+describe('isValidUuid', () => {
+  it('deve aceitar UUID válido', () => {
+    expect(isValidUuid('b7d9a2c4-3c91-4b6d-9e0c-2d8ef73f1a12')).toBeTrue();
+  });
 
-assert.equal(stockStatus(0), 'out-of-stock');
-assert.equal(stockLabel(0), 'Esgotado');
+  it('deve rejeitar UUID inválido', () => {
+    expect(isValidUuid('UUID-DA-CATEGORIA')).toBeFalse();
+    expect(isValidUuid('')).toBeFalse();
+  });
+});
 
-assert.equal(stockStatus(1), 'critical');
-assert.equal(stockStatus(5), 'low');
-assert.equal(stockLabel(5), 'Estoque baixo');
+describe('stockStatus', () => {
+  it('deve marcar estoque zerado como fora de estoque', () => {
+    expect(stockStatus(0)).toBe('out-of-stock');
+  });
 
-assert.equal(stockStatus(6), 'healthy');
-assert.equal(stockLabel(6), 'Disponível');
+  it('deve marcar estoque crítico quando está entre 1 e 2 unidades', () => {
+    expect(stockStatus(1)).toBe('critical');
+    expect(stockStatus(2)).toBe('critical');
+  });
 
-console.log('OK — regras de estoque (0 / 1 / 5 / 6) validadas.');
+  it('deve marcar estoque baixo quando está até o limite crítico', () => {
+    expect(stockStatus(5)).toBe('low');
+  });
+
+  it('deve marcar estoque saudável acima do limite', () => {
+    expect(stockStatus(6)).toBe('healthy');
+  });
+});
+
+describe('stockLabel', () => {
+  it('deve retornar a legenda correta para estoque zerado', () => {
+    expect(stockLabel(0)).toBe('Esgotado');
+  });
+
+  it('deve retornar a legenda correta para estoque baixo', () => {
+    expect(stockLabel(5)).toBe('Estoque baixo');
+  });
+
+  it('deve retornar a legenda correta para estoque disponível', () => {
+    expect(stockLabel(6)).toBe('Disponível');
+  });
+});

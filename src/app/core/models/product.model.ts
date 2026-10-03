@@ -1,9 +1,9 @@
-/**
- * Modelos de domínio espelhando os DTOs do back-end Spring Boot (Critério 2).
- */
-
 export interface Category {
   id: string;
+  name: string;
+}
+
+export interface CategoryCreateRequest {
   name: string;
 }
 
@@ -65,15 +65,23 @@ export interface OrderResponse {
   message: string;
 }
 
-/** Payload de erro do back-end (HTTP 400 / 404). */
 export interface ApiErrorResponse {
   message: string;
 }
 
 export type StockStatus = 'out-of-stock' | 'critical' | 'low' | 'healthy';
 
-/** Regra de negócio do alerta visual: estoque crítico em 5 unidades. */
 export const LOW_STOCK_THRESHOLD = 5;
+
+export function isValidUuid(value: string | null | undefined): boolean {
+  if (!value || typeof value !== 'string') {
+    return false;
+  }
+
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/i.test(
+    value.trim(),
+  );
+} 
 
 export function stockStatus(stock: number): StockStatus {
   if (stock <= 0) {
